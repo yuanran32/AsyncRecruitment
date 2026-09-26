@@ -19,6 +19,7 @@
           <template #default="{ row }">{{ row.directionLevel1Name }} / {{ row.directionLevel2Name }}</template>
         </el-table-column>
         <el-table-column prop="applicationId" label="申请 ID" width="110" />
+        <el-table-column prop="introduction" label="自我介绍" min-width="220" show-overflow-tooltip />
       </PageTable>
     </section>
   </div>

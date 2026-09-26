@@ -21,6 +21,9 @@
         <el-table-column label="年级" width="90">
           <template #default="{ row }">{{ getGradeLabel(row.grade) }}</template>
         </el-table-column>
+        <el-table-column label="意向方向" min-width="160">
+          <template #default="{ row }">{{ getDirectionLabel(row) }}</template>
+        </el-table-column>
         <el-table-column prop="introduction" label="自我介绍" min-width="220" show-overflow-tooltip />
         <el-table-column label="操作" :width="isMobile ? 84 : 180" fixed="right">
           <template #default="{ row }">
@@ -68,9 +71,13 @@ const filteredApplications = computed(() => {
 });
 
 onMounted(async () => {
-  groups.value = (await getGroups({ page: 1, size: 100 })).list;
-  selectedGroupId.value = groups.value[0]?.id;
-  await loadApplications();
+  loadApplications();
+  try {
+    groups.value = (await getGroups({ page: 1, size: 100 })).list;
+    selectedGroupId.value = groups.value[0]?.id;
+  } catch (error) {
+    console.error('加载责任包列表失败', error);
+  }
 });
 
 async function loadApplications() {
@@ -97,6 +104,10 @@ async function reject(applicationId: number) {
 
 function getGradeLabel(grade: Grade) {
   return gradeLabels[grade] || grade;
+}
+
+function getDirectionLabel(application: Application) {
+  return [application.directionLevel1Name, application.directionLevel2Name].filter(Boolean).join(' / ') || '未知方向';
 }
 </script>
 

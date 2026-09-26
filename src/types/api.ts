@@ -225,6 +225,7 @@ export interface GroupMember {
   admissionYear: number;
   directionLevel1Name: string;
   directionLevel2Name: string;
+  introduction?: string | null;
   applicationStatus: ApplicationStatus;
 }
 
