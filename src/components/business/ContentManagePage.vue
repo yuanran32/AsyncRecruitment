@@ -22,7 +22,6 @@
       </div>
 
       <PageTable :data="pagedItems" :loading="loading" empty-text="暂无内容">
-        <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="title" label="标题" :min-width="isMobile ? 110 : 220" show-overflow-tooltip />
         <el-table-column v-if="kind === 'announcements'" label="范围" width="96">
           <template #default="{ row }">
@@ -159,13 +158,10 @@
       <div v-loading="detailLoading">
         <template v-if="detailItem">
           <el-descriptions :column="1" border>
-            <el-descriptions-item label="ID">{{ displayText(detailItem.id) }}</el-descriptions-item>
             <el-descriptions-item label="标题">{{ displayText(detailItem.title) }}</el-descriptions-item>
             <el-descriptions-item v-if="kind === 'announcements'" label="范围">{{ getScopeLabel(detailItem) }}</el-descriptions-item>
             <el-descriptions-item label="责任包">{{ resolveGroupName(detailItem) }}</el-descriptions-item>
-            <el-descriptions-item v-if="getItemGroupId(detailItem) != null" label="责任包 ID">{{ displayText(getItemGroupId(detailItem)) }}</el-descriptions-item>
             <el-descriptions-item label="发布人">{{ getPublisher(detailItem) }}</el-descriptions-item>
-            <el-descriptions-item v-if="getItemPublisherUserId(detailItem) != null" label="发布人 ID">{{ displayText(getItemPublisherUserId(detailItem)) }}</el-descriptions-item>
             <el-descriptions-item v-if="kind === 'tasks'" label="满分">{{ displayText(getTaskValue(detailItem, 'maxScore')) }}</el-descriptions-item>
             <el-descriptions-item v-if="kind === 'tasks'" label="截止时间">{{ formatDateTime(getTaskValue(detailItem, 'deadlineAt')) }}</el-descriptions-item>
             <el-descriptions-item v-if="kind === 'tasks'" label="成员">{{ displayText(getTaskValue(detailItem, 'memberCount')) }}</el-descriptions-item>
@@ -175,7 +171,6 @@
             <el-descriptions-item v-if="kind === 'tasks'" label="完成率">{{ formatPercent(getTaskValue(detailItem, 'completionRate')) }}</el-descriptions-item>
             <el-descriptions-item label="发布时间">{{ formatDateTime(detailItem.createdAt) }}</el-descriptions-item>
             <el-descriptions-item label="更新时间">{{ formatDateTime(detailItem.updatedAt) }}</el-descriptions-item>
-            <el-descriptions-item v-if="getAttachment(detailItem)" label="附件文件 ID">{{ displayText(getAttachment(detailItem)?.fileId ?? getAttachment(detailItem)?.id) }}</el-descriptions-item>
             <el-descriptions-item v-if="getAttachment(detailItem)" label="附件文件名">{{ displayText(getAttachment(detailItem)?.originalFileName) }}</el-descriptions-item>
             <el-descriptions-item v-if="getAttachment(detailItem)" label="附件类型">{{ displayText(getAttachment(detailItem)?.contentType) }}</el-descriptions-item>
             <el-descriptions-item v-if="getAttachment(detailItem)" label="附件大小">{{ formatBytes(getAttachment(detailItem)?.sizeBytes) }}</el-descriptions-item>
@@ -195,7 +190,6 @@
         <el-button :icon="Download" @click="downloadSubmissions">批下载</el-button>
       </div>
       <PageTable :data="submissions" :loading="reviewLoading" empty-text="暂无提交记录">
-        <el-table-column prop="userId" label="用户 ID" width="90" />
         <el-table-column prop="realName" label="姓名" width="100" />
         <el-table-column prop="username" label="账号" width="130" />
         <el-table-column label="提交时间" min-width="170">
@@ -213,7 +207,6 @@
           </template>
         </el-table-column>
         <el-table-column prop="score" label="分数" width="80" />
-        <el-table-column prop="reviewerUserId" label="批阅人 ID" width="100" />
         <el-table-column prop="reviewerUsername" label="批阅人" width="120" />
         <el-table-column prop="reviewComment" label="评语" min-width="160" show-overflow-tooltip />
         <el-table-column label="批阅时间" min-width="170">
@@ -259,7 +252,6 @@
     <el-dialog v-model="submissionVisible" title="提交详情" :width="isMobile ? '96%' : '680px'">
       <template v-if="submissionTarget">
         <el-descriptions :column="isMobile ? 1 : 2" border>
-          <el-descriptions-item label="用户 ID">{{ displayText(submissionTarget.userId) }}</el-descriptions-item>
           <el-descriptions-item label="姓名">{{ displayText(submissionTarget.realName) }}</el-descriptions-item>
           <el-descriptions-item label="账号">{{ displayText(submissionTarget.username) }}</el-descriptions-item>
           <el-descriptions-item label="状态">
@@ -269,10 +261,8 @@
           </el-descriptions-item>
           <el-descriptions-item label="提交时间">{{ formatDateTime(submissionTarget.submittedAt) }}</el-descriptions-item>
           <el-descriptions-item label="分数">{{ displayText(submissionTarget.score) }}</el-descriptions-item>
-          <el-descriptions-item label="批阅人 ID">{{ displayText(submissionTarget.reviewerUserId) }}</el-descriptions-item>
           <el-descriptions-item label="批阅人">{{ displayText(submissionTarget.reviewerUsername) }}</el-descriptions-item>
           <el-descriptions-item label="批阅时间">{{ formatDateTime(submissionTarget.reviewedAt) }}</el-descriptions-item>
-          <el-descriptions-item label="附件文件 ID">{{ displayText(submissionTarget.attachment?.fileId) }}</el-descriptions-item>
           <el-descriptions-item label="附件文件名">{{ displayText(submissionTarget.attachment?.originalFileName) }}</el-descriptions-item>
           <el-descriptions-item label="附件类型">{{ displayText(submissionTarget.attachment?.contentType) }}</el-descriptions-item>
           <el-descriptions-item label="附件大小">{{ formatBytes(submissionTarget.attachment?.sizeBytes) }}</el-descriptions-item>

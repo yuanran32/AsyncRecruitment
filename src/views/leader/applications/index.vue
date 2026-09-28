@@ -13,11 +13,9 @@
       </div>
 
       <PageTable :data="filteredApplications" :loading="loading">
-        <el-table-column prop="id" label="申请 ID" width="90" />
         <el-table-column prop="realName" label="姓名" width="110" />
         <el-table-column prop="username" label="用户名" min-width="120" />
         <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="userId" label="用户 ID" width="90" />
         <el-table-column prop="phone" label="手机号" width="140" />
         <el-table-column label="院系专业" min-width="220">
           <template #default="{ row }">{{ row.college }} / {{ row.major }}</template>

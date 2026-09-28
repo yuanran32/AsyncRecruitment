@@ -1,7 +1,5 @@
 <template>
   <el-descriptions :column="column" border>
-    <el-descriptions-item label="申请 ID">{{ displayText(application.id) }}</el-descriptions-item>
-    <el-descriptions-item label="用户 ID">{{ displayText(application.userId) }}</el-descriptions-item>
     <el-descriptions-item label="用户名">{{ displayText(application.username) }}</el-descriptions-item>
     <el-descriptions-item label="邮箱">{{ displayText(application.email) }}</el-descriptions-item>
     <el-descriptions-item label="姓名">{{ displayText(application.realName) }}</el-descriptions-item>
@@ -11,14 +9,11 @@
     <el-descriptions-item label="班级">{{ displayText(application.className) }}</el-descriptions-item>
     <el-descriptions-item label="年级">{{ gradeLabels[application.grade] || application.grade }}</el-descriptions-item>
     <el-descriptions-item label="入学年份">{{ displayText(application.admissionYear) }}</el-descriptions-item>
-    <el-descriptions-item label="一级方向 ID">{{ displayText(application.directionLevel1Id) }}</el-descriptions-item>
     <el-descriptions-item label="一级方向">{{ displayText(application.directionLevel1Name) }}</el-descriptions-item>
-    <el-descriptions-item label="二级方向 ID">{{ displayText(application.directionLevel2Id) }}</el-descriptions-item>
     <el-descriptions-item label="二级方向">{{ displayText(application.directionLevel2Name) }}</el-descriptions-item>
     <el-descriptions-item label="状态">
       <StatusTag :value="application.status" />
     </el-descriptions-item>
-    <el-descriptions-item label="分组 ID">{{ displayText(application.groupId) }}</el-descriptions-item>
     <el-descriptions-item label="分组">{{ displayText(application.groupName) }}</el-descriptions-item>
     <el-descriptions-item label="备注">{{ displayText(application.statusRemark) }}</el-descriptions-item>
     <el-descriptions-item label="创建时间">{{ formatDateTime(application.createdAt) }}</el-descriptions-item>
