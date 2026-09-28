@@ -22,14 +22,15 @@
       </div>
 
       <PageTable :data="pagedItems" :loading="loading" empty-text="暂无内容">
+        <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="title" label="标题" :min-width="isMobile ? 110 : 220" show-overflow-tooltip />
         <el-table-column v-if="kind === 'announcements'" label="范围" width="96">
           <template #default="{ row }">
             <el-tag effect="plain">{{ scopeLabels[row.scope as Scope] || '组内' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column v-else label="责任包" :min-width="isMobile ? 100 : 150">
-          <template #default="{ row }">{{ getGroupName(row.groupId) }}</template>
+        <el-table-column label="责任包" :min-width="isMobile ? 100 : 150">
+          <template #default="{ row }">{{ resolveGroupName(row) }}</template>
         </el-table-column>
         <el-table-column v-if="kind === 'tasks'" label="满分" width="86">
           <template #default="{ row }">{{ row.maxScore }}</template>
@@ -37,18 +38,43 @@
         <el-table-column v-if="kind === 'tasks'" label="截止时间" :min-width="isMobile ? 130 : 170">
           <template #default="{ row }">{{ formatDateTime(row.deadlineAt) }}</template>
         </el-table-column>
-        <el-table-column v-if="kind !== 'announcements'" label="附件" width="92">
+        <el-table-column v-if="kind === 'tasks'" label="成员" width="80">
+          <template #default="{ row }">{{ displayText(row.memberCount) }}</template>
+        </el-table-column>
+        <el-table-column v-if="kind === 'tasks'" label="待提交" width="80">
+          <template #default="{ row }">{{ displayText(row.pendingCount) }}</template>
+        </el-table-column>
+        <el-table-column v-if="kind === 'tasks'" label="已提交" width="80">
+          <template #default="{ row }">{{ displayText(row.submittedCount) }}</template>
+        </el-table-column>
+        <el-table-column v-if="kind === 'tasks'" label="已批阅" width="80">
+          <template #default="{ row }">{{ displayText(row.reviewedCount) }}</template>
+        </el-table-column>
+        <el-table-column v-if="kind === 'tasks'" label="完成率" width="90">
+          <template #default="{ row }">{{ formatPercent(row.completionRate) }}</template>
+        </el-table-column>
+        <el-table-column v-if="kind !== 'announcements'" label="附件" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">
-            <el-tag v-if="hasAttachment(row)" type="success" effect="plain">有附件</el-tag>
+            <span v-if="getAttachment(row)">{{ getAttachmentLabel(getAttachment(row)) }}</span>
+            <el-tag v-else-if="hasAttachment(row)" type="success" effect="plain">有附件</el-tag>
             <span v-else class="muted">无</span>
           </template>
+        </el-table-column>
+        <el-table-column label="发布人" min-width="120">
+          <template #default="{ row }">{{ getPublisher(row) }}</template>
         </el-table-column>
         <el-table-column label="发布时间" :min-width="isMobile ? 130 : 170">
           <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
         </el-table-column>
+        <el-table-column label="更新时间" :min-width="isMobile ? 130 : 170">
+          <template #default="{ row }">{{ formatDateTime(row.updatedAt) }}</template>
+        </el-table-column>
         <el-table-column label="操作" :width="actionColumnWidth" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
+              <el-button text type="primary" :icon="View" title="详情" @click="openDetail(row)">
+                <span v-if="!isMobile">详情</span>
+              </el-button>
               <el-button
                 v-if="kind === 'tasks'"
                 text
@@ -128,12 +154,48 @@
       </template>
     </el-drawer>
 
+    
+    <el-drawer v-model="detailVisible" :title="`${itemName}详情`" :size="isMobile ? '100%' : '560px'">
+      <div v-loading="detailLoading">
+        <template v-if="detailItem">
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="ID">{{ displayText(detailItem.id) }}</el-descriptions-item>
+            <el-descriptions-item label="标题">{{ displayText(detailItem.title) }}</el-descriptions-item>
+            <el-descriptions-item v-if="kind === 'announcements'" label="范围">{{ getScopeLabel(detailItem) }}</el-descriptions-item>
+            <el-descriptions-item label="责任包">{{ resolveGroupName(detailItem) }}</el-descriptions-item>
+            <el-descriptions-item v-if="getItemGroupId(detailItem) != null" label="责任包 ID">{{ displayText(getItemGroupId(detailItem)) }}</el-descriptions-item>
+            <el-descriptions-item label="发布人">{{ getPublisher(detailItem) }}</el-descriptions-item>
+            <el-descriptions-item v-if="getItemPublisherUserId(detailItem) != null" label="发布人 ID">{{ displayText(getItemPublisherUserId(detailItem)) }}</el-descriptions-item>
+            <el-descriptions-item v-if="kind === 'tasks'" label="满分">{{ displayText(getTaskValue(detailItem, 'maxScore')) }}</el-descriptions-item>
+            <el-descriptions-item v-if="kind === 'tasks'" label="截止时间">{{ formatDateTime(getTaskValue(detailItem, 'deadlineAt')) }}</el-descriptions-item>
+            <el-descriptions-item v-if="kind === 'tasks'" label="成员">{{ displayText(getTaskValue(detailItem, 'memberCount')) }}</el-descriptions-item>
+            <el-descriptions-item v-if="kind === 'tasks'" label="待提交">{{ displayText(getTaskValue(detailItem, 'pendingCount')) }}</el-descriptions-item>
+            <el-descriptions-item v-if="kind === 'tasks'" label="已提交">{{ displayText(getTaskValue(detailItem, 'submittedCount')) }}</el-descriptions-item>
+            <el-descriptions-item v-if="kind === 'tasks'" label="已批阅">{{ displayText(getTaskValue(detailItem, 'reviewedCount')) }}</el-descriptions-item>
+            <el-descriptions-item v-if="kind === 'tasks'" label="完成率">{{ formatPercent(getTaskValue(detailItem, 'completionRate')) }}</el-descriptions-item>
+            <el-descriptions-item label="发布时间">{{ formatDateTime(detailItem.createdAt) }}</el-descriptions-item>
+            <el-descriptions-item label="更新时间">{{ formatDateTime(detailItem.updatedAt) }}</el-descriptions-item>
+            <el-descriptions-item v-if="getAttachment(detailItem)" label="附件文件 ID">{{ displayText(getAttachment(detailItem)?.fileId ?? getAttachment(detailItem)?.id) }}</el-descriptions-item>
+            <el-descriptions-item v-if="getAttachment(detailItem)" label="附件文件名">{{ displayText(getAttachment(detailItem)?.originalFileName) }}</el-descriptions-item>
+            <el-descriptions-item v-if="getAttachment(detailItem)" label="附件类型">{{ displayText(getAttachment(detailItem)?.contentType) }}</el-descriptions-item>
+            <el-descriptions-item v-if="getAttachment(detailItem)" label="附件大小">{{ formatBytes(getAttachment(detailItem)?.sizeBytes) }}</el-descriptions-item>
+            <el-descriptions-item label="正文">
+              <div v-if="getItemContent(detailItem)" class="submission-content">
+                <MarkdownViewer :content="getItemContent(detailItem)" />
+              </div>
+              <span v-else class="muted">—</span>
+            </el-descriptions-item>
+          </el-descriptions>
+        </template>
+      </div>
+    </el-drawer>
     <el-drawer v-model="reviewVisible" title="任务批阅" :size="isMobile ? '100%' : '860px'">
       <div class="review-head">
         <strong>{{ currentTask?.title }}</strong>
         <el-button :icon="Download" @click="downloadSubmissions">批下载</el-button>
       </div>
       <PageTable :data="submissions" :loading="reviewLoading" empty-text="暂无提交记录">
+        <el-table-column prop="userId" label="用户 ID" width="90" />
         <el-table-column prop="realName" label="姓名" width="100" />
         <el-table-column prop="username" label="账号" width="130" />
         <el-table-column label="提交时间" min-width="170">
@@ -144,17 +206,23 @@
             <el-tag :type="getSubmissionStatusType(row.status)" effect="plain">{{ getSubmissionStatusLabel(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="附件" width="86">
+        <el-table-column label="附件" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">
-            <el-tag v-if="row.attachment" type="success" effect="plain">有</el-tag>
+            <span v-if="row.attachment">{{ getAttachmentLabel(row.attachment) }}</span>
             <span v-else class="muted">无</span>
           </template>
         </el-table-column>
         <el-table-column prop="score" label="分数" width="80" />
+        <el-table-column prop="reviewerUserId" label="批阅人 ID" width="100" />
+        <el-table-column prop="reviewerUsername" label="批阅人" width="120" />
+        <el-table-column prop="reviewComment" label="评语" min-width="160" show-overflow-tooltip />
+        <el-table-column label="批阅时间" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.reviewedAt) }}</template>
+        </el-table-column>
         <el-table-column label="操作" :width="reviewActionWidth" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button text type="primary" :icon="View" title="查看" :disabled="!hasSubmissionDetail(row)" @click="openSubmissionDetail(row)">
+              <el-button text type="primary" :icon="View" title="查看" @click="openSubmissionDetail(row)">
                 <span v-if="!isMobile">查看</span>
               </el-button>
               <el-button text type="primary" :icon="EditPen" title="评分" @click="openReviewDialog(row)">
@@ -191,16 +259,23 @@
     <el-dialog v-model="submissionVisible" title="提交详情" :width="isMobile ? '96%' : '680px'">
       <template v-if="submissionTarget">
         <el-descriptions :column="isMobile ? 1 : 2" border>
-          <el-descriptions-item label="姓名">{{ submissionTarget.realName || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="账号">{{ submissionTarget.username || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="用户 ID">{{ displayText(submissionTarget.userId) }}</el-descriptions-item>
+          <el-descriptions-item label="姓名">{{ displayText(submissionTarget.realName) }}</el-descriptions-item>
+          <el-descriptions-item label="账号">{{ displayText(submissionTarget.username) }}</el-descriptions-item>
           <el-descriptions-item label="状态">
             <el-tag :type="getSubmissionStatusType(submissionTarget.status)" effect="plain">
               {{ getSubmissionStatusLabel(submissionTarget.status) }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="提交时间">{{ formatDateTime(submissionTarget.submittedAt) }}</el-descriptions-item>
-          <el-descriptions-item label="分数">{{ submissionTarget.score ?? '-' }}</el-descriptions-item>
+          <el-descriptions-item label="分数">{{ displayText(submissionTarget.score) }}</el-descriptions-item>
+          <el-descriptions-item label="批阅人 ID">{{ displayText(submissionTarget.reviewerUserId) }}</el-descriptions-item>
+          <el-descriptions-item label="批阅人">{{ displayText(submissionTarget.reviewerUsername) }}</el-descriptions-item>
           <el-descriptions-item label="批阅时间">{{ formatDateTime(submissionTarget.reviewedAt) }}</el-descriptions-item>
+          <el-descriptions-item label="附件文件 ID">{{ displayText(submissionTarget.attachment?.fileId) }}</el-descriptions-item>
+          <el-descriptions-item label="附件文件名">{{ displayText(submissionTarget.attachment?.originalFileName) }}</el-descriptions-item>
+          <el-descriptions-item label="附件类型">{{ displayText(submissionTarget.attachment?.contentType) }}</el-descriptions-item>
+          <el-descriptions-item label="附件大小">{{ formatBytes(submissionTarget.attachment?.sizeBytes) }}</el-descriptions-item>
         </el-descriptions>
 
         <section class="submission-section">
@@ -219,7 +294,7 @@
           <span v-else class="muted">无</span>
         </section>
 
-        <section v-if="submissionTarget.reviewComment" class="submission-section">
+        <section class="submission-section">
           <h3>评语</h3>
           <p class="review-comment">{{ submissionTarget.reviewComment }}</p>
         </section>
@@ -271,13 +346,14 @@ import {
   updateLeaderMaterial,
   updateLeaderTask
 } from '@/api/leader';
-import type { GroupSubmissionSummary } from '@/api/tasks';
+import { getTask, type GroupSubmissionSummary } from '@/api/tasks';
 import FileUploader from '@/components/common/FileUploader.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import PageTable from '@/components/common/PageTable.vue';
 import MarkdownEditor from '@/components/markdown/MarkdownEditor.vue';
 import MarkdownViewer from '@/components/markdown/MarkdownViewer.vue';
 import type { Announcement, Group, Material, Scope, Task, TaskAttachment } from '@/types/api';
+import { displayText, formatBytes, formatDateTime, formatPercent } from '@/utils/format';
 import { scopeLabels, submissionStatusLabels } from '@/utils/labels';
 
 type Mode = 'leader' | 'admin';
@@ -300,8 +376,8 @@ const itemNameMap: Record<Kind, string> = {
 
 const itemName = computed(() => itemNameMap[props.kind]);
 const actionColumnWidth = computed(() => {
-  if (!isMobile.value) return 280;
-  return props.kind === 'tasks' ? 132 : 92;
+  if (!isMobile.value) return props.kind === 'tasks' ? 360 : 320;
+  return props.kind === 'tasks' ? 164 : 124;
 });
 const reviewActionWidth = computed(() => (isMobile.value ? 128 : 260));
 const loading = ref(false);
@@ -366,6 +442,9 @@ const scoreTarget = ref<GroupSubmissionSummary | null>(null);
 const scoreForm = reactive({ score: 0, comment: '' });
 const submissionVisible = ref(false);
 const submissionTarget = ref<GroupSubmissionSummary | null>(null);
+const detailVisible = ref(false);
+const detailLoading = ref(false);
+const detailItem = ref<ManagedItem | null>(null);
 
 onMounted(async () => {
   await loadGroups();
@@ -411,19 +490,20 @@ function openCreate() {
   drawerVisible.value = true;
 }
 
-function openEdit(item: ManagedItem) {
+async function openEdit(item: ManagedItem) {
   editingId.value = item.id;
-  form.title = item.title;
-  form.contentMarkdown = item.contentMarkdown || item.content || '';
-  form.scope = 'scope' in item ? item.scope || 'GROUP' : 'GROUP';
-  form.groupId = 'groupId' in item ? item.groupId || undefined : undefined;
-  const attachment = getAttachment(item);
-  form.attachmentFileId = attachment?.id ?? attachment?.fileId ?? ('attachmentFileId' in item ? item.attachmentFileId || null : null);
+  const source = await hydrateItem(item);
+  form.title = source.title;
+  form.contentMarkdown = getItemContent(source);
+  form.scope = 'scope' in source ? source.scope || 'GROUP' : 'GROUP';
+  form.groupId = getItemGroupId(source) || undefined;
+  const attachment = getAttachment(source);
+  form.attachmentFileId = attachment?.id ?? attachment?.fileId ?? ('attachmentFileId' in source ? source.attachmentFileId || null : null);
   form.attachmentFileName =
-    attachment?.originalFileName ?? ('attachmentFileName' in item ? item.attachmentFileName || '' : '');
+    attachment?.originalFileName ?? ('attachmentFileName' in source ? source.attachmentFileName || '' : '');
   form.removeAttachment = false;
-  form.maxScore = 'maxScore' in item ? item.maxScore : 100;
-  form.deadlineAt = 'deadlineAt' in item ? item.deadlineAt : '';
+  form.maxScore = 'maxScore' in source ? source.maxScore : 100;
+  form.deadlineAt = 'deadlineAt' in source ? source.deadlineAt : '';
   drawerVisible.value = true;
 }
 
@@ -572,8 +652,66 @@ function downloadSubmissions() {
   window.open(url, '_blank');
 }
 
+async function openDetail(item: ManagedItem) {
+  detailItem.value = item;
+  detailVisible.value = true;
+  if (props.kind !== 'tasks') return;
+  detailLoading.value = true;
+  try {
+    detailItem.value = await hydrateItem(item);
+  } finally {
+    detailLoading.value = false;
+  }
+}
+
+async function hydrateItem(item: ManagedItem): Promise<ManagedItem> {
+  if (props.kind !== 'tasks') return item;
+  try {
+    const detail = await getTask(item.id);
+    return { ...(item as Task), ...detail };
+  } catch {
+    return item;
+  }
+}
+
+function getScopeLabel(item: ManagedItem) {
+  if (!('scope' in item) || !item.scope) return '—';
+  return scopeLabels[item.scope] || item.scope;
+}
+
+function getItemGroupId(item: ManagedItem) {
+  return 'groupId' in item ? item.groupId ?? null : null;
+}
+
+function getItemPublisherUserId(item: ManagedItem) {
+  return 'publisherUserId' in item ? item.publisherUserId ?? null : null;
+}
+
+function getTaskValue<K extends keyof Task>(item: ManagedItem, key: K): Task[K] | undefined {
+  return key in item ? (item as Task)[key] : undefined;
+}
+
+function getItemContent(item: ManagedItem) {
+  if (item.contentMarkdown) return item.contentMarkdown;
+  if ('content' in item && item.content) return String(item.content);
+  return '';
+}
+
+function resolveGroupName(item: ManagedItem) {
+  if ('groupName' in item && item.groupName) return item.groupName;
+  if ('groupId' in item) return getGroupName(item.groupId);
+  return '—';
+}
+
+function getPublisher(item: ManagedItem) {
+  if ('publisherUsername' in item && item.publisherUsername) return item.publisherUsername;
+  if ('publisherName' in item && item.publisherName) return item.publisherName;
+  if ('publisherUserId' in item && item.publisherUserId) return `#${item.publisherUserId}`;
+  return '—';
+}
+
 function getGroupName(groupId?: number | null) {
-  return groups.value.find((group) => group.id === groupId)?.name || (groupId ? `责任包 #${groupId}` : '-');
+  return groups.value.find((group) => group.id === groupId)?.name || (groupId ? `责任包 #${groupId}` : '—');
 }
 
 function hasSubmissionDetail(row: GroupSubmissionSummary) {
@@ -581,7 +719,7 @@ function hasSubmissionDetail(row: GroupSubmissionSummary) {
 }
 
 function getSubmissionStatusLabel(status?: GroupSubmissionSummary['status']) {
-  return status ? submissionStatusLabels[status] || status : '-';
+  return status ? submissionStatusLabels[status] || status : '—';
 }
 
 function getSubmissionStatusType(status?: GroupSubmissionSummary['status']) {
@@ -603,6 +741,13 @@ function getAttachment(item: ManagedItem): TaskAttachment | null {
   return 'attachment' in item ? item.attachment || null : null;
 }
 
+function getAttachmentLabel(attachment?: TaskAttachment | null) {
+  if (!attachment) return '无';
+  const name = attachment.originalFileName || '附件';
+  const size = attachment.sizeBytes != null ? ` (${formatBytes(attachment.sizeBytes)})` : '';
+  return `${name}${size}`;
+}
+
 function hasAttachment(item: ManagedItem) {
   return Boolean(
     getAttachment(item) ||
@@ -610,19 +755,6 @@ function hasAttachment(item: ManagedItem) {
       ('attachmentUrl' in item && item.attachmentUrl) ||
       ('hasAttachment' in item && item.hasAttachment)
   );
-}
-
-function formatDateTime(value?: string | null) {
-  if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date);
 }
 </script>
 

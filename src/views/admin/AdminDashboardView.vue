@@ -9,24 +9,44 @@
       <div class="dashboard-main">
         <div class="kpi-grid" v-loading="loading">
           <article class="kpi-card">
-            <span class="muted">注册人数</span>
-            <strong>{{ summary.userCount }}</strong>
+            <span class="muted">注册用户</span>
+            <strong>{{ summary.totalUsers }}</strong>
             <small>系统累计注册用户</small>
           </article>
           <article class="kpi-card accent">
             <span class="muted">报名申请</span>
-            <strong>{{ summary.applicationCount }}</strong>
+            <strong>{{ summary.totalApplications }}</strong>
             <small>当前周期报名总量</small>
           </article>
           <article class="kpi-card">
             <span class="muted">已分组申请</span>
-            <strong>{{ summary.groupedApplicationCount }}</strong>
+            <strong>{{ summary.groupedApplications }}</strong>
             <small>已进入分组流程</small>
           </article>
           <article class="kpi-card">
-            <span class="muted">任务完成率</span>
-            <strong>{{ taskCompletionPercent }}%</strong>
-            <small>任务批阅与提交进度</small>
+            <span class="muted">未分组申请</span>
+            <strong>{{ summary.ungroupedApplications }}</strong>
+            <small>待分配到分组</small>
+          </article>
+          <article class="kpi-card">
+            <span class="muted">分组数量</span>
+            <strong>{{ summary.totalGroups }}</strong>
+            <small>当前可管理分组</small>
+          </article>
+          <article class="kpi-card">
+            <span class="muted">任务数量</span>
+            <strong>{{ summary.totalTasks }}</strong>
+            <small>已发布组级任务</small>
+          </article>
+          <article class="kpi-card">
+            <span class="muted">已提交结果</span>
+            <strong>{{ summary.totalSubmittedTaskResults }}</strong>
+            <small>待批阅的任务提交</small>
+          </article>
+          <article class="kpi-card">
+            <span class="muted">已批阅结果</span>
+            <strong>{{ summary.totalReviewedTaskResults }}</strong>
+            <small>完成评测的任务提交</small>
           </article>
         </div>
 
@@ -49,14 +69,14 @@
                   <span class="legend-dot primary"></span>
                   <div>
                     <strong>已分组</strong>
-                    <p>{{ summary.groupedApplicationCount }} 条</p>
+                    <p>{{ summary.groupedApplications }} 条</p>
                   </div>
                 </div>
                 <div class="legend-item">
                   <span class="legend-dot accent"></span>
                   <div>
                     <strong>待处理</strong>
-                    <p>{{ pendingApplications }} 条</p>
+                    <p>{{ summary.ungroupedApplications }} 条</p>
                   </div>
                 </div>
                 <div class="legend-item">
@@ -112,6 +132,32 @@
             </div>
           </section>
         </div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-head-copy">
+              <h2>分组看板</h2>
+              <p>展示每个分组的成员、任务和完成情况。</p>
+            </div>
+          </div>
+          <PageTable :data="groupSummaries" :loading="groupsLoading" empty-text="暂无分组数据">
+            <el-table-column prop="groupId" label="分组 ID" width="100" />
+            <el-table-column prop="groupName" label="分组名称" min-width="160" />
+            <el-table-column prop="memberCount" label="成员" width="90" />
+            <el-table-column prop="taskCount" label="任务" width="90" />
+            <el-table-column prop="submittedCount" label="已提交" width="90" />
+            <el-table-column prop="reviewedCount" label="已批阅" width="90" />
+            <el-table-column prop="pendingCount" label="待提交" width="90" />
+            <el-table-column label="完成率" width="110">
+              <template #default="{ row }">{{ formatPercent(row.completionRate) }}</template>
+            </el-table-column>
+            <el-table-column label="操作" width="110" fixed="right">
+              <template #default="{ row }">
+                <el-button text type="primary" @click="openGroupDetail(row.groupId)">详情</el-button>
+              </template>
+            </el-table-column>
+          </PageTable>
+        </section>
       </div>
 
       <aside class="dashboard-rail">
@@ -141,8 +187,8 @@
 
           <div class="mini-metrics">
             <div>
-              <span>已分组用户</span>
-              <strong>{{ summary.groupedUserCount }}</strong>
+              <span>已分组申请</span>
+              <strong>{{ summary.groupedApplications }}</strong>
             </div>
             <div>
               <span>负责人数量</span>
@@ -150,12 +196,61 @@
             </div>
             <div>
               <span>未分组申请</span>
-              <strong>{{ summary.unassignedApplicationCount }}</strong>
+              <strong>{{ summary.ungroupedApplications }}</strong>
+            </div>
+            <div>
+              <span>任务提交合计</span>
+              <strong>{{ summary.totalSubmittedTaskResults + summary.totalReviewedTaskResults }}</strong>
             </div>
           </div>
         </section>
       </aside>
     </section>
+
+    <el-drawer v-model="detailVisible" title="分组看板详情" size="720px">
+      <div v-loading="detailLoading">
+        <template v-if="groupDetail">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="分组 ID">{{ groupDetail.groupId }}</el-descriptions-item>
+            <el-descriptions-item label="分组名称">{{ groupDetail.groupName }}</el-descriptions-item>
+            <el-descriptions-item label="成员数">{{ groupDetail.memberCount }}</el-descriptions-item>
+            <el-descriptions-item label="任务数">{{ groupDetail.taskCount }}</el-descriptions-item>
+            <el-descriptions-item label="已提交">{{ groupDetail.submittedCount }}</el-descriptions-item>
+            <el-descriptions-item label="已批阅">{{ groupDetail.reviewedCount }}</el-descriptions-item>
+            <el-descriptions-item label="待提交">{{ groupDetail.pendingCount }}</el-descriptions-item>
+            <el-descriptions-item label="完成率">{{ formatPercent(groupDetail.completionRate) }}</el-descriptions-item>
+          </el-descriptions>
+          <h3 class="detail-title">任务明细</h3>
+          <PageTable :data="groupDetail.tasks" empty-text="暂无任务">
+            <el-table-column prop="id" label="任务 ID" width="90" />
+            <el-table-column prop="title" label="标题" min-width="160" />
+            <el-table-column prop="groupId" label="分组 ID" width="90" />
+            <el-table-column prop="groupName" label="分组" min-width="140" />
+            <el-table-column label="附件" min-width="180" show-overflow-tooltip>
+              <template #default="{ row }">{{ formatAttachment(row.attachment) }}</template>
+            </el-table-column>
+            <el-table-column prop="maxScore" label="满分" width="80" />
+            <el-table-column prop="memberCount" label="成员" width="80" />
+            <el-table-column prop="pendingCount" label="待提交" width="90" />
+            <el-table-column prop="submittedCount" label="已提交" width="90" />
+            <el-table-column prop="reviewedCount" label="已批阅" width="90" />
+            <el-table-column label="完成率" width="100">
+              <template #default="{ row }">{{ formatPercent(row.completionRate) }}</template>
+            </el-table-column>
+            <el-table-column label="截止时间" min-width="160">
+              <template #default="{ row }">{{ formatDateTime(row.deadlineAt) }}</template>
+            </el-table-column>
+            <el-table-column label="创建时间" min-width="160">
+              <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+            </el-table-column>
+            <el-table-column label="更新时间" min-width="160">
+              <template #default="{ row }">{{ formatDateTime(row.updatedAt) }}</template>
+            </el-table-column>
+          </PageTable>
+        </template>
+        <el-empty v-else description="暂无分组详情" />
+      </div>
+    </el-drawer>
   </div>
 </template>
 
@@ -164,38 +259,50 @@ import * as echarts from "echarts";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
-import { getDashboardSummary } from "@/api/admin";
+import { getAdminDashboardGroupDetail, getAdminDashboardGroups, getDashboardSummary } from "@/api/admin";
 import PageHeader from "@/components/common/PageHeader.vue";
-import type { AdminDashboardSummary } from "@/types/api";
+import PageTable from "@/components/common/PageTable.vue";
+import type { AdminDashboardSummary, GroupDashboardDetail, GroupDashboardSummary } from "@/types/api";
+import { formatBytes, formatDateTime, formatPercent } from "@/utils/format";
 
 const router = useRouter();
 const loading = ref(false);
+const groupsLoading = ref(false);
+const detailLoading = ref(false);
+const detailVisible = ref(false);
 const chartRef = ref<HTMLDivElement | null>(null);
 let chart: echarts.ECharts | null = null;
+const groupSummaries = ref<GroupDashboardSummary[]>([]);
+const groupDetail = ref<GroupDashboardDetail | null>(null);
 
 const summary = reactive<AdminDashboardSummary>({
-  userCount: 0,
-  applicationCount: 0,
-  groupedUserCount: 0,
-  groupedApplicationCount: 0,
-  unassignedApplicationCount: 0,
-  leaderCount: 0,
-  taskCompletionRate: 0
+  totalUsers: 0,
+  totalApplications: 0,
+  groupedApplications: 0,
+  ungroupedApplications: 0,
+  totalGroups: 0,
+  totalTasks: 0,
+  totalSubmittedTaskResults: 0,
+  totalReviewedTaskResults: 0,
+  leaderCount: 0
 });
 
-const pendingApplications = computed(() => computedPendingApplications(summary));
-const taskCompletionPercent = computed(() => Math.round(summary.taskCompletionRate * 100));
+const taskCompletionPercent = computed(() => {
+  const total = summary.totalSubmittedTaskResults + summary.totalReviewedTaskResults;
+  if (!total) return 0;
+  return Math.round((summary.totalReviewedTaskResults / total) * 100);
+});
 const pendingRate = computed(() => {
-  if (!summary.applicationCount) return 0;
-  return Math.round((summary.unassignedApplicationCount / summary.applicationCount) * 100);
+  if (!summary.totalApplications) return 0;
+  return Math.round((summary.ungroupedApplications / summary.totalApplications) * 100);
 });
 const groupedRate = computed(() => {
-  if (!summary.applicationCount) return 0;
-  return Math.round((summary.groupedApplicationCount / summary.applicationCount) * 100);
+  if (!summary.totalApplications) return 0;
+  return Math.round((summary.groupedApplications / summary.totalApplications) * 100);
 });
 
 onMounted(async () => {
-  await loadSummary();
+  await Promise.all([loadSummary(), loadGroups()]);
   initChart();
   window.addEventListener("resize", handleResize);
 });
@@ -207,7 +314,7 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  () => [summary.groupedApplicationCount, summary.unassignedApplicationCount, summary.applicationCount],
+  () => [summary.groupedApplications, summary.ungroupedApplications, summary.totalApplications],
   () => {
     renderChart();
   }
@@ -222,6 +329,30 @@ async function loadSummary() {
   }
 }
 
+async function loadGroups() {
+  groupsLoading.value = true;
+  try {
+    groupSummaries.value = await getAdminDashboardGroups();
+  } finally {
+    groupsLoading.value = false;
+  }
+}
+
+function formatAttachment(attachment?: { originalFileName?: string; sizeBytes?: number | null } | null) {
+  if (!attachment?.originalFileName) return '—';
+  return `${attachment.originalFileName} (${formatBytes(attachment.sizeBytes)})`;
+}
+
+async function openGroupDetail(groupId: number) {
+  detailVisible.value = true;
+  detailLoading.value = true;
+  try {
+    groupDetail.value = await getAdminDashboardGroupDetail(groupId);
+  } finally {
+    detailLoading.value = false;
+  }
+}
+
 function initChart() {
   if (!chartRef.value) return;
   chart = echarts.init(chartRef.value);
@@ -230,8 +361,8 @@ function initChart() {
 
 function renderChart() {
   if (!chart) return;
-  const pending = Math.max(summary.applicationCount - summary.groupedApplicationCount, summary.unassignedApplicationCount, 0);
-  const grouped = Math.max(summary.groupedApplicationCount, 0);
+  const pending = Math.max(summary.ungroupedApplications, 0);
+  const grouped = Math.max(summary.groupedApplications, 0);
 
   chart.setOption({
     animationDuration: 700,
@@ -266,7 +397,7 @@ function renderChart() {
       left: "center",
       top: "center",
       style: {
-        text: `${summary.applicationCount}\n报名总量`,
+        text: `${summary.totalApplications}\n报名总量`,
         textAlign: "center",
         fill: "#2f2b26",
         fontSize: 18,
@@ -284,11 +415,6 @@ function handleResize() {
 function go(path: string) {
   void router.push(path);
 }
-
-function computedPendingApplications(source: AdminDashboardSummary) {
-  return Math.max(source.applicationCount - source.groupedApplicationCount, source.unassignedApplicationCount, 0);
-}
-
 </script>
 
 <style scoped>
@@ -629,4 +755,10 @@ function computedPendingApplications(source: AdminDashboardSummary) {
     grid-template-columns: 1fr;
   }
 }
+
+.detail-title {
+  margin: 18px 0 10px;
+  font-size: 16px;
+}
 </style>
+

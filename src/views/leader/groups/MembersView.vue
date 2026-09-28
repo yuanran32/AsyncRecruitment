@@ -9,6 +9,7 @@
         <el-button :icon="Refresh" :loading="loading" @click="loadMembers">刷新</el-button>
       </div>
       <PageTable :data="members" :loading="loading">
+        <el-table-column prop="userId" label="用户 ID" width="90" />
         <el-table-column prop="realName" label="姓名" width="120" />
         <el-table-column prop="username" label="账号" width="140" />
         <el-table-column label="年级" width="100">
@@ -19,6 +20,11 @@
           <template #default="{ row }">{{ row.directionLevel1Name }} / {{ row.directionLevel2Name }}</template>
         </el-table-column>
         <el-table-column prop="applicationId" label="申请 ID" width="110" />
+        <el-table-column label="申请状态" width="110">
+          <template #default="{ row }">
+            <StatusTag :value="row.applicationStatus" />
+          </template>
+        </el-table-column>
         <el-table-column prop="introduction" label="自我介绍" min-width="220" show-overflow-tooltip />
       </PageTable>
     </section>
@@ -33,6 +39,7 @@ import { useRoute } from 'vue-router';
 import { getGroupMembers, getGroups } from '@/api/leader';
 import PageHeader from '@/components/common/PageHeader.vue';
 import PageTable from '@/components/common/PageTable.vue';
+import StatusTag from '@/components/common/StatusTag.vue';
 import type { Grade, Group, GroupMember } from '@/types/api';
 import { gradeLabels } from '@/utils/labels';
 

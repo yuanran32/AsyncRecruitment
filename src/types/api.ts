@@ -24,10 +24,22 @@ export type UserStatus = 'ACTIVE' | 'DISABLED';
 export type PeriodType = 'REGISTRATION' | 'SELECTION' | 'INTERVIEW' | 'NOT_OPEN' | 'FINISHED';
 export type ApplicationStatus = 'SUBMITTED' | 'GROUPED' | 'REJECTED' | 'WITHDRAWN';
 export type Scope = 'GLOBAL' | 'GROUP';
-export type Grade = 'YEAR_1' | 'YEAR_2' | 'YEAR_3' | 'YEAR_4';
+export type Grade = 'YEAR_1' | 'YEAR_2' | 'YEAR_3' | 'YEAR_4' | 'GRADUATED';
 export type SubmissionStatus = 'PENDING' | 'SUBMITTED' | 'REVIEWED';
 export type DisplaySubmissionStatus = SubmissionStatus | 'EXPIRED';
 export type FilePurpose = 'TASK_ATTACHMENT' | 'TASK_SUBMISSION_ATTACHMENT' | 'MATERIAL_ATTACHMENT';
+export type AuditModule =
+  | 'AUTH'
+  | 'APPLICATION'
+  | 'GROUP'
+  | 'TASK'
+  | 'ANNOUNCEMENT'
+  | 'MATERIAL'
+  | 'CONFIG'
+  | 'EXPORT'
+  | 'FILE'
+  | 'NOTIFICATION';
+export type AuditSeverity = 'NORMAL' | 'IMPORTANT' | 'MAJOR';
 export type NotificationType =
   | 'APPLICATION_REJECTED'
   | 'APPLICATION_GROUPED'
@@ -56,11 +68,18 @@ export interface User {
   leaderGroupId?: number;
   leaderGroups?: SimpleGroup[];
   groups?: SimpleGroup[];
+  leaderGroupCount?: number;
+  applicationCount?: number;
+  groupCount?: number;
+  lastLoginAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SimpleGroup {
   id: number;
   name: string;
+  currentSize?: number;
 }
 
 export interface CurrentPeriod {
@@ -130,7 +149,10 @@ export interface Announcement {
   contentMarkdown?: string;
   scope: Scope;
   groupId?: number | null;
-  publisherName: string;
+  groupName?: string | null;
+  publisherUserId?: number | null;
+  publisherUsername?: string;
+  publisherName?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -138,6 +160,7 @@ export interface Announcement {
 export interface Material {
   id: number;
   groupId?: number;
+  groupName?: string | null;
   title: string;
   summary?: string;
   content?: string;
@@ -149,6 +172,8 @@ export interface Material {
   directionLevel1Id?: number | null;
   directionLevel2Id?: number | null;
   hasAttachment?: boolean;
+  publisherUserId?: number | null;
+  publisherUsername?: string;
   publisherName?: string;
   createdAt: string;
   updatedAt?: string;
@@ -168,10 +193,19 @@ export interface Task {
   attachmentUrl?: string | null;
   maxScore: number;
   deadlineAt: string;
+  publisherUserId?: number | null;
+  publisherUsername?: string | null;
   publisherName?: string;
   submissionStatus?: SubmissionStatus;
+  submittedAt?: string | null;
+  reviewedAt?: string | null;
   reviewStatus?: SubmissionStatus;
   submission?: TaskSubmission;
+  memberCount?: number;
+  pendingCount?: number;
+  submittedCount?: number;
+  reviewedCount?: number;
+  completionRate?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -180,6 +214,8 @@ export interface TaskSubmission {
   id?: number;
   taskId: number;
   userId?: number;
+  username?: string | null;
+  realName?: string | null;
   status: SubmissionStatus;
   submittedAt?: string | null;
   content?: string;
@@ -189,6 +225,7 @@ export interface TaskSubmission {
   attachmentFileName?: string | null;
   attachmentUrl?: string | null;
   reviewerUserId?: number | null;
+  reviewerUsername?: string | null;
   score?: number | null;
   reviewComment?: string | null;
   reviewedAt?: string | null;
@@ -209,11 +246,16 @@ export interface Group {
   id: number;
   name: string;
   directionLevel1Id: number;
+  directionLevel1Name?: string | null;
   directionLevel2Id: number;
+  directionLevel2Name?: string | null;
   grade: Grade;
   admissionYear: number;
   maxSize: number;
+  currentSize?: number;
   leaderUserId?: number | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface GroupMember {
@@ -239,25 +281,57 @@ export interface UploadedFile {
   size: number;
 }
 
-export interface AdminDashboardSummary {
-  userCount: number;
-  applicationCount: number;
-  groupedUserCount: number;
-  groupedApplicationCount: number;
-  unassignedApplicationCount: number;
+export interface AdminDashboardOverview {
+  totalUsers: number;
+  totalApplications: number;
+  groupedApplications: number;
+  ungroupedApplications: number;
+  totalGroups: number;
+  totalTasks: number;
+  totalSubmittedTaskResults: number;
+  totalReviewedTaskResults: number;
+}
+
+export interface AdminDashboardSummary extends AdminDashboardOverview {
   leaderCount: number;
-  taskCompletionRate: number;
+}
+
+export interface GroupDashboardSummary {
+  groupId: number;
+  groupName: string;
+  memberCount: number;
+  taskCount: number;
+  submittedCount: number;
+  reviewedCount: number;
+  pendingCount: number;
+  completionRate: number;
+}
+
+export interface GroupDashboardDetail extends GroupDashboardSummary {
+  tasks: Task[];
 }
 
 export interface AuditLog {
   id: number;
-  operatorName: string;
-  module: string;
+  module: AuditModule | string;
   action: string;
+  severity?: AuditSeverity | string;
+  actorUserId?: number | null;
+  actorUsername?: string | null;
+  actorRole?: Role | null;
+  targetType?: string | null;
+  targetId?: number | null;
+  success?: boolean;
+  summary?: string | null;
+  detailJson?: string | null;
+  requestId?: string | null;
+  requestPath?: string | null;
+  clientIp?: string | null;
+  createdAt: string;
+  operatorName?: string;
   target?: string;
   detail?: string;
   ip?: string;
-  createdAt: string;
 }
 
 export interface NotificationSummary {
@@ -268,7 +342,7 @@ export interface NotificationItem {
   id: number;
   title: string;
   content: string;
-  type?: NotificationType;
+  type?: NotificationType | string;
   relatedType?: string | null;
   relatedId?: number | null;
   senderUserId?: number | null;

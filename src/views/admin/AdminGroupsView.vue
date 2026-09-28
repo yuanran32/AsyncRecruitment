@@ -33,7 +33,8 @@
               <el-tag effect="light" size="small">{{ getGradeLabel(item.grade) }}</el-tag>
             </div>
             <div class="group-card__meta">{{ getGroupDirectionLabel(item) }}</div>
-            <div class="group-card__meta">入学年份：{{ item.admissionYear }} · 容量：{{ item.maxSize }}</div>
+            <div class="group-card__meta">入学年份：{{ item.admissionYear }} · 容量：{{ item.currentSize ?? 0 }} / {{ item.maxSize }}</div>
+            <div class="group-card__meta">创建时间：{{ formatDateTime(item.createdAt) }}</div>
             <div class="group-card__meta">负责人：{{ getLeaderLabel(item) }}</div>
             <div class="group-card__actions">
               <el-button text type="primary" :icon="View" @click="openDetail(item.id)">详情</el-button>
@@ -47,6 +48,7 @@
       </MobileList>
 
       <el-table v-else v-loading="loading" :data="groups" empty-text="暂无分组">
+        <el-table-column prop="id" label="分组 ID" width="90" />
         <el-table-column prop="name" label="分组名称" min-width="180" />
         <el-table-column label="方向" min-width="180">
           <template #default="{ row }">{{ getGroupDirectionLabel(row) }}</template>
@@ -55,9 +57,18 @@
           <template #default="{ row }">{{ getGradeLabel(row.grade) }}</template>
         </el-table-column>
         <el-table-column prop="admissionYear" label="入学年份" width="110" />
-        <el-table-column prop="maxSize" label="容量" width="90" />
+        <el-table-column label="容量" width="110">
+          <template #default="{ row }">{{ row.currentSize ?? 0 }} / {{ row.maxSize }}</template>
+        </el-table-column>
         <el-table-column label="负责人" width="120">
           <template #default="{ row }">{{ getLeaderLabel(row) }}</template>
+        </el-table-column>
+        <el-table-column prop="leaderUserId" label="负责人 ID" width="110" />
+        <el-table-column label="创建时间" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+        </el-table-column>
+        <el-table-column label="更新时间" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.updatedAt) }}</template>
         </el-table-column>
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
@@ -105,12 +116,18 @@
       <div v-loading="detailLoading">
         <template v-if="detailGroup">
           <el-descriptions :column="1" border>
+            <el-descriptions-item label="分组 ID">{{ detailGroup.id }}</el-descriptions-item>
             <el-descriptions-item label="分组名称">{{ detailGroup.name }}</el-descriptions-item>
             <el-descriptions-item label="方向">{{ getGroupDirectionLabel(detailGroup) }}</el-descriptions-item>
+            <el-descriptions-item label="一级方向 ID">{{ detailGroup.directionLevel1Id }}</el-descriptions-item>
+            <el-descriptions-item label="二级方向 ID">{{ detailGroup.directionLevel2Id }}</el-descriptions-item>
             <el-descriptions-item label="年级">{{ getGradeLabel(detailGroup.grade) }}</el-descriptions-item>
             <el-descriptions-item label="入学年份">{{ detailGroup.admissionYear }}</el-descriptions-item>
-            <el-descriptions-item label="容量">{{ members.length }} / {{ detailGroup.maxSize }}</el-descriptions-item>
+            <el-descriptions-item label="容量">{{ detailGroup.currentSize ?? members.length }} / {{ detailGroup.maxSize }}</el-descriptions-item>
             <el-descriptions-item label="负责人">{{ getLeaderLabel(detailGroup) }}</el-descriptions-item>
+            <el-descriptions-item label="负责人 ID">{{ displayText(detailGroup.leaderUserId) }}</el-descriptions-item>
+            <el-descriptions-item label="创建时间">{{ formatDateTime(detailGroup.createdAt) }}</el-descriptions-item>
+            <el-descriptions-item label="更新时间">{{ formatDateTime(detailGroup.updatedAt) }}</el-descriptions-item>
           </el-descriptions>
 
           <div class="member-header">
@@ -122,14 +139,23 @@
           <p v-if="!metaStore.isSelection" class="muted">当前不是选拔期，无法补录成员。</p>
           <p v-else-if="isGroupFull" class="muted">当前分组已满员，无法继续添加成员。</p>
           <el-table :data="members" empty-text="暂无成员">
+            <el-table-column prop="userId" label="用户 ID" width="90" />
             <el-table-column prop="realName" label="姓名" width="110" />
             <el-table-column prop="username" label="用户名" width="130" />
+            <el-table-column prop="applicationId" label="申请 ID" width="90" />
             <el-table-column label="方向" min-width="160">
               <template #default="{ row }">{{ row.directionLevel1Name }} / {{ row.directionLevel2Name }}</template>
             </el-table-column>
             <el-table-column label="年级" width="90">
               <template #default="{ row }">{{ getGradeLabel(row.grade) }}</template>
             </el-table-column>
+            <el-table-column prop="admissionYear" label="入学年份" width="100" />
+            <el-table-column label="申请状态" width="110">
+              <template #default="{ row }">
+                <StatusTag :value="row.applicationStatus" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="introduction" label="自我介绍" min-width="180" show-overflow-tooltip />
           </el-table>
         </template>
         <el-empty v-else description="分组不存在或已不可访问" />
@@ -223,10 +249,12 @@ import { getGroup, getGroupMembers } from '@/api/groups';
 import ConfirmAction from '@/components/common/ConfirmAction.vue';
 import MobileList from '@/components/common/MobileList.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
+import StatusTag from '@/components/common/StatusTag.vue';
 import SearchBar from '@/components/common/SearchBar.vue';
 import DirectionCascader from '@/components/forms/DirectionCascader.vue';
 import { useMetaStore } from '@/stores/meta';
 import type { Grade, Group, GroupMember, User } from '@/types/api';
+import { displayText, formatDateTime } from '@/utils/format';
 import { gradeLabels } from '@/utils/labels';
 import { useIsMobile, useOverlayLayout } from '@/composables/useMediaQuery';
 
@@ -486,8 +514,8 @@ function createEmptyForm(): GroupPayload {
 }
 
 function getGroupDirectionLabel(group: Group) {
-  const level1 = findDirectionName(group.directionLevel1Id);
-  const level2 = findDirectionName(group.directionLevel2Id);
+  const level1 = group.directionLevel1Name || findDirectionName(group.directionLevel1Id);
+  const level2 = group.directionLevel2Name || findDirectionName(group.directionLevel2Id);
   return [level1, level2].filter(Boolean).join(' / ') || '未知方向';
 }
 

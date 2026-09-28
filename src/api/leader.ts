@@ -36,7 +36,15 @@ export function getLeaderGroupTasksExportUrl(groupId: number | string) {
 }
 
 import { getData, postData } from './http';
-import type { Application, Grade, Group, PageQuery, PageResult } from '@/types/api';
+import type {
+  Application,
+  Grade,
+  Group,
+  GroupDashboardDetail,
+  GroupDashboardSummary,
+  PageQuery,
+  PageResult
+} from '@/types/api';
 
 export function getGroups(params?: PageQuery) {
   return getData<Group[]>('/leader/groups').then((groups) => {
@@ -71,3 +79,11 @@ export function rejectLeaderApplication(applicationId: number | string, remark?:
   return postData<null, { remark?: string }>(`/leader/applications/${applicationId}/reject`, { remark });
 }
 
+
+export function getLeaderDashboardGroups() {
+  return getData<GroupDashboardSummary[]>('/leader/dashboard/groups');
+}
+
+export function getLeaderDashboardGroupDetail(groupId: number | string) {
+  return getData<GroupDashboardDetail>(`/leader/dashboard/groups/${groupId}`);
+}

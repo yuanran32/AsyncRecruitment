@@ -36,6 +36,7 @@ import { useRouter } from 'vue-router';
 
 import { useAuthStore } from '@/stores/auth';
 import { useNotificationStore } from '@/stores/notifications';
+import type { NotificationType } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 import { notificationTypeLabels } from '@/utils/labels';
 import { getNotificationTagType, resolveNotificationPath } from '@/utils/notification';
@@ -47,7 +48,7 @@ const notificationStore = useNotificationStore();
 const current = computed(() => notificationStore.current);
 
 const typeLabel = computed(() =>
-  current.value?.type ? notificationTypeLabels[current.value.type] : '系统通知'
+  current.value?.type ? (notificationTypeLabels[current.value.type as NotificationType] || current.value.type) : '系统通知'
 );
 
 const detailPath = computed(() =>

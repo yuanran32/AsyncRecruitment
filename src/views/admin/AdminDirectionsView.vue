@@ -22,6 +22,7 @@
                 {{ item.enabled === false ? '停用' : '启用' }}
               </el-tag>
             </div>
+            <div class="direction-child__meta">ID {{ item.id }} · 父级 {{ item.parentId ?? '无' }}</div>
             <div class="direction-card__actions">
               <el-button size="small" text type="primary" :icon="Plus" @click="openCreateDialog(item.id)">
                 子方向
@@ -36,7 +37,7 @@
               <div v-for="child in item.children" :key="child.id" class="direction-child">
                 <div class="direction-child__info">
                   <span class="direction-child__name">{{ child.name }}</span>
-                  <span class="direction-child__meta">排序 {{ child.sortOrder ?? 0 }}</span>
+                  <span class="direction-child__meta">ID {{ child.id }} · 父级 {{ child.parentId ?? '无' }} · 排序 {{ child.sortOrder ?? 0 }}</span>
                 </div>
                 <el-tag :type="child.enabled === false ? 'info' : 'success'" effect="light" size="small">
                   {{ child.enabled === false ? '停用' : '启用' }}
@@ -62,6 +63,10 @@
         :tree-props="{ children: 'children' }"
         empty-text="暂无方向"
       >
+        <el-table-column prop="id" label="方向 ID" width="100" />
+        <el-table-column label="父级 ID" width="100">
+          <template #default="{ row }">{{ row.parentId ?? '—' }}</template>
+        </el-table-column>
         <el-table-column prop="name" label="方向名称" min-width="300" />
         <el-table-column label="层级" min-width="140">
           <template #default="{ row }">{{ row.level === 1 ? '一级' : '二级' }}</template>

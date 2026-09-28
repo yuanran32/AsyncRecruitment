@@ -2,7 +2,7 @@ import type { NotificationItem, NotificationType, Role } from '@/types/api';
 
 type RouteTarget = Pick<NotificationItem, 'relatedType' | 'relatedId'>;
 
-export function getNotificationTagType(type?: NotificationType): 'success' | 'danger' | 'primary' | 'warning' {
+export function getNotificationTagType(type?: NotificationType | string): 'success' | 'danger' | 'primary' | 'warning' {
   switch (type) {
     case 'TASK_PUBLISHED':
       return 'success';

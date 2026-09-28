@@ -90,8 +90,8 @@ async function handleReadAll() {
   await notificationStore.readAll();
 }
 
-function getTypeLabel(type?: NotificationType) {
-  return type ? notificationTypeLabels[type] : '系统通知';
+function getTypeLabel(type?: NotificationType | string) {
+  return type ? notificationTypeLabels[type as NotificationType] || type : '系统通知';
 }
 </script>
 

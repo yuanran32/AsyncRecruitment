@@ -1,11 +1,14 @@
 import { deleteData, getData, patchData, postData, putData } from './http';
 import type {
+  AdminDashboardOverview,
   AdminDashboardSummary,
   AuditLog,
   Application,
   Direction,
   Grade,
   Group,
+  GroupDashboardDetail,
+  GroupDashboardSummary,
   NotificationItem,
   PageResult,
   PeriodType,
@@ -60,34 +63,26 @@ export interface GroupPayload {
   maxSize: number;
 }
 
-export function getDashboardSummary() {
-  return Promise.all([
-    getData<AdminDashboardOverview>('/admin/dashboard/overview'),
-    getData<PageResult<User>>('/admin/users', { role: 'LEADER', page: 1, size: 1 })
-  ]).then(([overview, leaders]) => ({
-    userCount: overview.totalUsers,
-    applicationCount: overview.totalApplications,
-    groupedUserCount: overview.groupedApplications,
-    groupedApplicationCount: overview.groupedApplications,
-    unassignedApplicationCount: overview.ungroupedApplications,
-    leaderCount: leaders.total,
-    taskCompletionRate:
-      overview.totalSubmittedTaskResults + overview.totalReviewedTaskResults === 0
-        ? 0
-        : overview.totalReviewedTaskResults /
-          (overview.totalSubmittedTaskResults + overview.totalReviewedTaskResults)
-  }));
+export function getAdminDashboardOverview() {
+  return getData<AdminDashboardOverview>('/admin/dashboard/overview');
 }
 
-interface AdminDashboardOverview {
-  totalUsers: number;
-  totalApplications: number;
-  groupedApplications: number;
-  ungroupedApplications: number;
-  totalGroups: number;
-  totalTasks: number;
-  totalSubmittedTaskResults: number;
-  totalReviewedTaskResults: number;
+export function getAdminDashboardGroups() {
+  return getData<GroupDashboardSummary[]>('/admin/dashboard/groups');
+}
+
+export function getAdminDashboardGroupDetail(groupId: number | string) {
+  return getData<GroupDashboardDetail>(`/admin/dashboard/groups/${groupId}`);
+}
+
+export function getDashboardSummary() {
+  return Promise.all([
+    getAdminDashboardOverview(),
+    getData<PageResult<User>>('/admin/users', { role: 'LEADER', page: 1, size: 1 })
+  ]).then(([overview, leaders]) => ({
+    ...overview,
+    leaderCount: leaders.total
+  } satisfies AdminDashboardSummary));
 }
 
 export function getAdminPeriods() {
@@ -260,6 +255,8 @@ export function getAdminTaskBatchDownloadUrl(groupId: number | string, taskId?: 
 
 export function getAdminAuditLogs(params?: {
   module?: string;
+  severity?: string;
+  success?: boolean;
   keyword?: string;
   page?: number;
   size?: number;

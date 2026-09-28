@@ -13,21 +13,42 @@
       </div>
 
       <PageTable :data="filteredApplications" :loading="loading">
+        <el-table-column prop="id" label="申请 ID" width="90" />
         <el-table-column prop="realName" label="姓名" width="110" />
+        <el-table-column prop="username" label="用户名" min-width="120" />
+        <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="userId" label="用户 ID" width="90" />
         <el-table-column prop="phone" label="手机号" width="140" />
         <el-table-column label="院系专业" min-width="220">
           <template #default="{ row }">{{ row.college }} / {{ row.major }}</template>
         </el-table-column>
+        <el-table-column prop="className" label="班级" min-width="120" />
         <el-table-column label="年级" width="90">
           <template #default="{ row }">{{ getGradeLabel(row.grade) }}</template>
         </el-table-column>
+        <el-table-column prop="admissionYear" label="入学年份" width="110" />
         <el-table-column label="意向方向" min-width="160">
           <template #default="{ row }">{{ getDirectionLabel(row) }}</template>
         </el-table-column>
+        <el-table-column label="状态" width="110">
+          <template #default="{ row }">
+            <StatusTag :value="row.status" />
+          </template>
+        </el-table-column>
+        <el-table-column label="备注" min-width="140" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.statusRemark || '—' }}</template>
+        </el-table-column>
         <el-table-column prop="introduction" label="自我介绍" min-width="220" show-overflow-tooltip />
-        <el-table-column label="操作" :width="isMobile ? 84 : 180" fixed="right">
+        <el-table-column label="创建时间" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+        </el-table-column>
+        <el-table-column label="更新时间" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.updatedAt) }}</template>
+        </el-table-column>
+        <el-table-column label="操作" :width="isMobile ? 110 : 220" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
+              <el-button text type="primary" :icon="View" @click="openDetail(row)">详情</el-button>
               <el-button text type="primary" :icon="Plus" @click="assign(row.id)">加入</el-button>
               <el-popconfirm title="确认驳回该申请？" confirm-button-text="驳回" cancel-button-text="取消" @confirm="reject(row.id)">
                 <template #reference>
@@ -39,19 +60,26 @@
         </el-table-column>
       </PageTable>
     </section>
+
+    <el-drawer v-model="detailVisible" title="报名详情" :size="isMobile ? '100%' : '560px'">
+      <ApplicationDetail v-if="detailApplication" :application="detailApplication" />
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Close, Plus, Refresh } from '@element-plus/icons-vue';
+import { Close, Plus, Refresh, View } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { computed, onMounted, ref } from 'vue';
 
 import { addLeaderApplicationToGroup, getGroups, getLeaderUngroupedApplications, rejectLeaderApplication } from '@/api/leader';
+import ApplicationDetail from '@/components/business/ApplicationDetail.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import PageTable from '@/components/common/PageTable.vue';
+import StatusTag from '@/components/common/StatusTag.vue';
 import { useIsMobile } from '@/composables/useMediaQuery';
 import type { Application, Grade, Group } from '@/types/api';
+import { formatDateTime } from '@/utils/format';
 import { gradeLabels } from '@/utils/labels';
 
 const isMobile = useIsMobile();
@@ -60,11 +88,13 @@ const keyword = ref('');
 const selectedGroupId = ref<number>();
 const groups = ref<Group[]>([]);
 const applications = ref<Application[]>([]);
+const detailVisible = ref(false);
+const detailApplication = ref<Application | null>(null);
 const filteredApplications = computed(() => {
   const text = keyword.value.trim();
   if (!text) return applications.value;
   return applications.value.filter((item) =>
-    [item.realName, item.phone, item.college, item.major, item.className, item.introduction].some((value) =>
+    [item.realName, item.username, item.email, item.phone, item.college, item.major, item.className, item.introduction].some((value) =>
       String(value || '').includes(text)
     )
   );
@@ -104,6 +134,11 @@ async function reject(applicationId: number) {
 
 function getGradeLabel(grade: Grade) {
   return gradeLabels[grade] || grade;
+}
+
+function openDetail(application: Application) {
+  detailApplication.value = application;
+  detailVisible.value = true;
 }
 
 function getDirectionLabel(application: Application) {

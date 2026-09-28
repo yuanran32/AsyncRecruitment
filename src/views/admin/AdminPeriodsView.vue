@@ -19,6 +19,7 @@
                 {{ item.enabled ? '启用' : '停用' }}
               </el-tag>
             </div>
+            <div class="period-card__meta">ID {{ item.id ?? '—' }}</div>
             <div class="period-card__meta">开始：{{ formatDateTime(item.startTime) }}</div>
             <div class="period-card__meta">结束：{{ formatDateTime(item.endTime) }}</div>
             <div class="period-card__actions">
@@ -29,6 +30,7 @@
       </MobileList>
 
       <el-table v-else v-loading="loading" :data="periods" empty-text="暂无时期配置">
+        <el-table-column prop="id" label="时期 ID" width="90" />
         <el-table-column label="时期" width="120">
           <template #default="{ row }">{{ getPeriodLabel(row.periodType) }}</template>
         </el-table-column>

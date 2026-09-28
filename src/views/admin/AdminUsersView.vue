@@ -37,7 +37,7 @@
         <template #card="{ row }">
           <div class="user-card">
             <div class="user-card__head">
-              <span class="user-card__name">{{ row.username }}</span>
+              <span class="user-card__name">{{ row.username }} <span class="muted">#{{ row.id }}</span></span>
               <el-tag :type="row.status === 'DISABLED' ? 'info' : 'success'" effect="light" size="small">
                 {{ getUserStatusLabel(row.status) }}
               </el-tag>
@@ -57,8 +57,16 @@
               <el-tag v-else type="danger" effect="light" size="small">{{ getRoleLabel(row.role) }}</el-tag>
             </div>
             <div class="user-card__meta">
+              邮箱验证：{{ row.emailVerified ? '已验证' : '未验证' }}
+            </div>
+            <div class="user-card__meta">
+              报名 {{ row.applicationCount ?? 0 }} · 所在分组 {{ row.groupCount ?? 0 }} · 负责分组 {{ row.leaderGroupCount ?? 0 }}
+            </div>
+            <div class="user-card__meta">
               所在分组：{{ row.groups?.length ? row.groups.map((group: SimpleGroup) => group.name).join('、') : '暂无' }}
             </div>
+            <div class="user-card__meta">最近登录：{{ formatDateTime(row.lastLoginAt) }}</div>
+            <div class="user-card__meta">创建时间：{{ formatDateTime(row.createdAt) }}</div>
             <div class="user-card__actions">
               <el-button text type="primary" :icon="View" @click="openDetail(row.id)">详情</el-button>
               <el-button text :icon="EditPen" :disabled="!canManageRow(row)" @click="openEditDialog(row)">编辑</el-button>
@@ -82,6 +90,7 @@
             </div>
           </div>
         </template>
+        <el-table-column prop="id" label="用户 ID" width="90" />
         <el-table-column prop="username" label="用户名" min-width="130" />
         <el-table-column prop="email" label="邮箱" min-width="220" />
         <el-table-column label="角色" width="150">
@@ -104,10 +113,28 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="邮箱验证" width="110">
+          <template #default="{ row }">{{ row.emailVerified ? '已验证' : '未验证' }}</template>
+        </el-table-column>
+        <el-table-column label="报名数" width="90">
+          <template #default="{ row }">{{ row.applicationCount ?? 0 }}</template>
+        </el-table-column>
+        <el-table-column label="所在分组数" width="110">
+          <template #default="{ row }">{{ row.groupCount ?? 0 }}</template>
+        </el-table-column>
+        <el-table-column label="负责分组数" width="110">
+          <template #default="{ row }">{{ row.leaderGroupCount ?? 0 }}</template>
+        </el-table-column>
         <el-table-column label="所在分组" min-width="180">
           <template #default="{ row }">
-            {{ row.groups?.length ? row.groups.map((group: SimpleGroup) => group.name).join('、') : '暂无' }}
+            {{ formatGroupNames(row.groups) }}
           </template>
+        </el-table-column>
+        <el-table-column label="最近登录" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.lastLoginAt) }}</template>
+        </el-table-column>
+        <el-table-column label="创建时间" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
         </el-table-column>
         <el-table-column label="操作" width="360" fixed="right">
           <template #default="{ row }">
@@ -188,11 +215,17 @@
               {{ detailUser.emailVerified ? '已验证' : '未验证' }}
             </el-descriptions-item>
             <el-descriptions-item label="所在分组">
-              {{ detailUser.groups?.length ? detailUser.groups.map((group) => group.name).join('、') : '暂无' }}
+              {{ formatGroupNames(detailUser.groups) }}
             </el-descriptions-item>
             <el-descriptions-item label="负责分组">
-              {{ detailUser.leaderGroups?.length ? detailUser.leaderGroups.map((group) => group.name).join('、') : '暂无' }}
+              {{ formatGroupNames(detailUser.leaderGroups) }}
             </el-descriptions-item>
+            <el-descriptions-item label="报名数">{{ detailUser.applicationCount ?? 0 }}</el-descriptions-item>
+            <el-descriptions-item label="所在分组数">{{ detailUser.groupCount ?? 0 }}</el-descriptions-item>
+            <el-descriptions-item label="负责分组数">{{ detailUser.leaderGroupCount ?? (detailUser.leaderGroups?.length || 0) }}</el-descriptions-item>
+            <el-descriptions-item label="最近登录">{{ formatDateTime(detailUser.lastLoginAt) }}</el-descriptions-item>
+            <el-descriptions-item label="创建时间">{{ formatDateTime(detailUser.createdAt) }}</el-descriptions-item>
+            <el-descriptions-item label="更新时间">{{ formatDateTime(detailUser.updatedAt) }}</el-descriptions-item>
           </el-descriptions>
         </template>
         <el-empty v-else description="用户不存在或已不可访问" />
@@ -231,6 +264,7 @@ import {
   normalizeEmail,
   passwordRuleMessage
 } from '@/utils/authValidation';
+import { formatDateTime } from '@/utils/format';
 import { roleLabels, userStatusLabels } from '@/utils/labels';
 
 interface UserForm {
@@ -426,6 +460,11 @@ async function handleDelete(user: User) {
 
 function getUserStatusLabel(status?: UserStatus) {
   return userStatusLabels[status || 'ACTIVE'];
+}
+
+function formatGroupNames(groups?: SimpleGroup[] | null) {
+  if (!groups?.length) return '暂无';
+  return groups.map((group) => `${group.name} (#${group.id})`).join('、');
 }
 
 function getRoleLabel(role: Role) {

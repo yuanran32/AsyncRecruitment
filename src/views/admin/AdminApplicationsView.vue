@@ -44,15 +44,22 @@
         @update:page="handlePageChange"
         @update:size="handleSizeChange"
       >
+        <el-table-column prop="id" label="申请 ID" width="90" />
+        <el-table-column prop="userId" label="用户 ID" width="90" />
         <el-table-column prop="realName" label="姓名" width="110" />
+        <el-table-column prop="username" label="用户名" min-width="120" />
+        <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="phone" label="手机号" width="130" />
         <el-table-column label="方向" min-width="180">
           <template #default="{ row }">{{ getDirectionLabel(row) }}</template>
         </el-table-column>
         <el-table-column prop="college" label="学院" min-width="140" />
         <el-table-column prop="major" label="专业" min-width="150" />
+        <el-table-column prop="className" label="班级" min-width="120" />
         <el-table-column label="年级" width="90">
           <template #default="{ row }">{{ getGradeLabel(row.grade) }}</template>
         </el-table-column>
+        <el-table-column prop="admissionYear" label="入学年份" width="100" />
         <el-table-column label="状态" width="110">
           <template #default="{ row }">
             <StatusTag :value="row.status" />
@@ -81,8 +88,20 @@
         <el-table-column label="备注" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">{{ row.statusRemark || '—' }}</template>
         </el-table-column>
-        <el-table-column label="操作" :width="isMobile ? 84 : 240" fixed="right">
+        <el-table-column label="自我介绍" min-width="180" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.introduction || '—' }}</template>
+        </el-table-column>
+        <el-table-column label="创建时间" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+        </el-table-column>
+        <el-table-column label="更新时间" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.updatedAt) }}</template>
+        </el-table-column>
+        <el-table-column label="操作" :width="isMobile ? 110 : 300" fixed="right">
           <template #default="{ row }">
+            <div class="table-actions">
+              <el-button text type="primary" :icon="View" @click="openDetail(row)">详情</el-button>
+            </div>
             <div v-if="row.status === 'SUBMITTED'" class="table-actions">
               <el-button
                 text
@@ -116,11 +135,15 @@
         </el-table-column>
       </PageTable>
     </section>
+
+    <el-drawer v-model="detailVisible" title="报名详情" :size="isMobile ? '100%' : '560px'">
+      <ApplicationDetail v-if="detailApplication" :application="detailApplication" />
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Close, Plus, Refresh, Remove, Search } from '@element-plus/icons-vue';
+import { Close, Plus, Refresh, Remove, Search, View } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { onMounted, reactive, ref } from 'vue';
 
@@ -131,6 +154,7 @@ import {
   rejectAdminApplication,
   unassignApplicationFromGroup
 } from '@/api/admin';
+import ApplicationDetail from '@/components/business/ApplicationDetail.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import PageTable from '@/components/common/PageTable.vue';
 import SearchBar from '@/components/common/SearchBar.vue';
@@ -139,6 +163,7 @@ import DirectionCascader from '@/components/forms/DirectionCascader.vue';
 import { useIsMobile } from '@/composables/useMediaQuery';
 import { useMetaStore } from '@/stores/meta';
 import type { Application, ApplicationStatus, Grade, Group } from '@/types/api';
+import { formatDateTime } from '@/utils/format';
 import { applicationStatusLabels, gradeLabels } from '@/utils/labels';
 
 const isMobile = useIsMobile();
@@ -150,6 +175,8 @@ const groups = ref<Group[]>([]);
 const total = ref(0);
 const directionPath = ref<number[]>([]);
 const targetGroupIds = reactive<Record<number, number | undefined>>({});
+const detailVisible = ref(false);
+const detailApplication = ref<Application | null>(null);
 const query = reactive<{
   keyword: string;
   directionLevel1Id?: number;
@@ -315,6 +342,11 @@ async function unassignApplication(application: Application) {
   } finally {
     actionId.value = null;
   }
+}
+
+function openDetail(application: Application) {
+  detailApplication.value = application;
+  detailVisible.value = true;
 }
 
 function getDirectionLabel(application: Application) {

@@ -10,11 +10,15 @@
         <el-button :icon="Refresh" :loading="loading" @click="loadNotifications">刷新</el-button>
       </div>
       <PageTable :data="notifications" :loading="loading">
+        <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="title" label="标题" min-width="180" />
-        <el-table-column prop="content" label="内容" min-width="260" show-overflow-tooltip />
-        <el-table-column label="类型" width="120">
+        <el-table-column prop="content" label="内容" min-width="240" show-overflow-tooltip />
+        <el-table-column label="类型" min-width="120">
           <template #default="{ row }">{{ getTypeLabel(row.type) }}</template>
         </el-table-column>
+        <el-table-column prop="relatedType" label="关联类型" min-width="120" />
+        <el-table-column prop="relatedId" label="关联 ID" width="100" />
+        <el-table-column prop="senderUserId" label="发送人 ID" width="110" />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.readAt ? 'info' : 'success'" effect="plain">
@@ -25,9 +29,16 @@
         <el-table-column label="创建时间" min-width="170">
           <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
         </el-table-column>
-        <el-table-column label="操作" :width="isMobile ? 64 : 140" fixed="right">
+        <el-table-column label="更新时间" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.updatedAt) }}</template>
+        </el-table-column>
+        <el-table-column label="已读时间" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.readAt) }}</template>
+        </el-table-column>
+        <el-table-column label="操作" :width="isMobile ? 96 : 180" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
+              <el-button text type="primary" @click="openDetail(row)">详情</el-button>
               <el-button text type="primary" :icon="Check" :disabled="Boolean(row.readAt)" @click="markRead(row.id)">
                 标为已读
               </el-button>
@@ -36,6 +47,24 @@
         </el-table-column>
       </PageTable>
     </section>
+
+    <el-drawer v-model="detailVisible" title="通知详情" :size="isMobile ? '100%' : '560px'">
+      <el-descriptions v-if="detailItem" :column="1" border>
+        <el-descriptions-item label="ID">{{ displayText(detailItem.id) }}</el-descriptions-item>
+        <el-descriptions-item label="标题">{{ displayText(detailItem.title) }}</el-descriptions-item>
+        <el-descriptions-item label="类型">{{ getTypeLabel(detailItem.type) }}</el-descriptions-item>
+        <el-descriptions-item label="关联类型">{{ displayText(detailItem.relatedType) }}</el-descriptions-item>
+        <el-descriptions-item label="关联 ID">{{ displayText(detailItem.relatedId) }}</el-descriptions-item>
+        <el-descriptions-item label="发送人 ID">{{ displayText(detailItem.senderUserId) }}</el-descriptions-item>
+        <el-descriptions-item label="状态">{{ detailItem.readAt ? '已读' : '未读' }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ formatDateTime(detailItem.createdAt) }}</el-descriptions-item>
+        <el-descriptions-item label="更新时间">{{ formatDateTime(detailItem.updatedAt) }}</el-descriptions-item>
+        <el-descriptions-item label="已读时间">{{ formatDateTime(detailItem.readAt) }}</el-descriptions-item>
+        <el-descriptions-item label="内容">
+          <div class="notify-content">{{ displayText(detailItem.content) }}</div>
+        </el-descriptions-item>
+      </el-descriptions>
+    </el-drawer>
   </div>
 </template>
 
@@ -48,11 +77,15 @@ import { getCurrentNotifications, markAllNotificationsRead, markNotificationRead
 import PageHeader from '@/components/common/PageHeader.vue';
 import PageTable from '@/components/common/PageTable.vue';
 import { useIsMobile } from '@/composables/useMediaQuery';
-import type { NotificationItem } from '@/types/api';
+import type { NotificationItem, NotificationType } from '@/types/api';
+import { displayText, formatDateTime } from '@/utils/format';
+import { notificationTypeLabels } from '@/utils/labels';
 
 const isMobile = useIsMobile();
 const loading = ref(false);
 const notifications = ref<NotificationItem[]>([]);
+const detailVisible = ref(false);
+const detailItem = ref<NotificationItem | null>(null);
 const query = reactive({ unreadOnly: false, page: 1, size: 10 });
 
 onMounted(loadNotifications);
@@ -78,21 +111,14 @@ async function markAllRead() {
   await loadNotifications();
 }
 
-function getTypeLabel(type?: string) {
-  const labels: Record<string, string> = {
-    SYSTEM: '系统',
-    APPLICATION: '报名',
-    GROUP: '分组',
-    TASK: '任务',
-    ANNOUNCEMENT: '公告'
-  };
-  return type ? labels[type] || type : '-';
+function openDetail(item: NotificationItem) {
+  detailItem.value = item;
+  detailVisible.value = true;
 }
 
-function formatDateTime(value?: string | null) {
-  if (!value) return '-';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('zh-CN', { hour12: false });
+function getTypeLabel(type?: string) {
+  if (!type) return '—';
+  return notificationTypeLabels[type as NotificationType] || type;
 }
 </script>
 
@@ -102,5 +128,10 @@ function formatDateTime(value?: string | null) {
   align-items: center;
   flex: 1;
   gap: 10px;
+}
+
+.notify-content {
+  white-space: pre-wrap;
+  line-height: 1.7;
 }
 </style>

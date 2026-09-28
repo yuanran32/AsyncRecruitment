@@ -12,10 +12,21 @@
 
     <section class="page-section">
       <el-table v-loading="loading" :data="groups" empty-text="暂无分组">
+        <el-table-column prop="id" label="分组 ID" width="90" />
         <el-table-column prop="name" label="分组" min-width="180" />
         <el-table-column label="方向" min-width="170">
           <template #default="{ row }">{{ getGroupDirectionLabel(row) }}</template>
         </el-table-column>
+        <el-table-column prop="directionLevel1Id" label="一级方向 ID" width="120" />
+        <el-table-column prop="directionLevel2Id" label="二级方向 ID" width="120" />
+        <el-table-column label="年级" width="90">
+          <template #default="{ row }">{{ getGradeLabel(row.grade) }}</template>
+        </el-table-column>
+        <el-table-column prop="admissionYear" label="入学年份" width="110" />
+        <el-table-column label="容量" width="110">
+          <template #default="{ row }">{{ row.currentSize ?? 0 }} / {{ row.maxSize }}</template>
+        </el-table-column>
+        <el-table-column prop="leaderUserId" label="负责人 ID" width="110" />
         <el-table-column label="当前负责人" min-width="150">
           <template #default="{ row }">{{ getLeaderName(row.leaderUserId) }}</template>
         </el-table-column>
@@ -25,6 +36,12 @@
               <el-option v-for="leader in leaders" :key="leader.id" :label="leader.username" :value="leader.id" />
             </el-select>
           </template>
+        </el-table-column>
+        <el-table-column label="创建时间" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+        </el-table-column>
+        <el-table-column label="更新时间" min-width="170">
+          <template #default="{ row }">{{ formatDateTime(row.updatedAt) }}</template>
         </el-table-column>
         <el-table-column label="操作" :width="isMobile ? 84 : 240" fixed="right">
           <template #default="{ row }">
@@ -55,7 +72,9 @@ import ConfirmAction from '@/components/common/ConfirmAction.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useIsMobile } from '@/composables/useMediaQuery';
 import { useMetaStore } from '@/stores/meta';
-import type { Group, User } from '@/types/api';
+import type { Grade, Group, User } from '@/types/api';
+import { formatDateTime } from '@/utils/format';
+import { gradeLabels } from '@/utils/labels';
 
 const isMobile = useIsMobile();
 const metaStore = useMetaStore();
@@ -118,9 +137,13 @@ function getLeaderName(userId?: number | null) {
 }
 
 function getGroupDirectionLabel(group: Group) {
-  const level1 = findDirectionName(group.directionLevel1Id);
-  const level2 = findDirectionName(group.directionLevel2Id);
+  const level1 = group.directionLevel1Name || findDirectionName(group.directionLevel1Id);
+  const level2 = group.directionLevel2Name || findDirectionName(group.directionLevel2Id);
   return [level1, level2].filter(Boolean).join(' / ') || '未知方向';
+}
+
+function getGradeLabel(grade: Grade) {
+  return gradeLabels[grade] || grade;
 }
 
 function findDirectionName(id: number) {

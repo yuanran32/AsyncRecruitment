@@ -1,5 +1,7 @@
 import type {
   ApplicationStatus,
+  AuditModule,
+  AuditSeverity,
   Grade,
   NotificationType,
   PeriodType,
@@ -55,7 +57,8 @@ export const gradeLabels: Record<Grade, string> = {
   YEAR_1: '大一',
   YEAR_2: '大二',
   YEAR_3: '大三',
-  YEAR_4: '大四'
+  YEAR_4: '大四',
+  GRADUATED: '已毕业'
 };
 
 export const notificationTypeLabels: Record<NotificationType, string> = {
@@ -67,4 +70,23 @@ export const notificationTypeLabels: Record<NotificationType, string> = {
   TASK_REVIEWED: '任务评测',
   ANNOUNCEMENT_PUBLISHED: '公告',
   MATERIAL_PUBLISHED: '学习资料'
+};
+
+export const auditModuleLabels: Record<AuditModule, string> = {
+  AUTH: '认证',
+  APPLICATION: '报名',
+  GROUP: '分组',
+  TASK: '任务',
+  ANNOUNCEMENT: '公告',
+  MATERIAL: '资料',
+  CONFIG: '配置',
+  EXPORT: '导出',
+  FILE: '文件',
+  NOTIFICATION: '通知'
+};
+
+export const auditSeverityLabels: Record<AuditSeverity, string> = {
+  NORMAL: '普通',
+  IMPORTANT: '重要',
+  MAJOR: '重大'
 };
