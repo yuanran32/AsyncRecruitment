@@ -32,7 +32,6 @@
             @update:page="loadLogs"
             @update:size="handleSizeChange"
           >
-            <el-table-column prop="id" label="ID" width="80" />
             <el-table-column prop="actorUsername" label="操作人" min-width="120" />
             <el-table-column label="角色" width="100">
               <template #default="{ row }">{{ getRoleLabel(row.actorRole) }}</template>
@@ -71,8 +70,6 @@
 
     <el-drawer v-model="detailVisible" title="审计详情" size="640px">
       <el-descriptions v-if="detailLog" :column="1" border>
-        <el-descriptions-item label="ID">{{ displayText(detailLog.id) }}</el-descriptions-item>
-        <el-descriptions-item label="操作人 ID">{{ displayText(detailLog.actorUserId) }}</el-descriptions-item>
         <el-descriptions-item label="操作人">{{ displayText(detailLog.actorUsername) }}</el-descriptions-item>
         <el-descriptions-item label="角色">{{ getRoleLabel(detailLog.actorRole) }}</el-descriptions-item>
         <el-descriptions-item label="模块">{{ getModuleLabel(detailLog.module) }}</el-descriptions-item>
@@ -80,9 +77,7 @@
         <el-descriptions-item label="级别">{{ getSeverityLabel(detailLog.severity) }}</el-descriptions-item>
         <el-descriptions-item label="结果">{{ detailLog.success === false ? '失败' : '成功' }}</el-descriptions-item>
         <el-descriptions-item label="目标类型">{{ displayText(detailLog.targetType) }}</el-descriptions-item>
-        <el-descriptions-item label="目标 ID">{{ displayText(detailLog.targetId) }}</el-descriptions-item>
         <el-descriptions-item label="摘要">{{ displayText(detailLog.summary) }}</el-descriptions-item>
-        <el-descriptions-item label="请求 ID">{{ displayText(detailLog.requestId) }}</el-descriptions-item>
         <el-descriptions-item label="请求路径">{{ displayText(detailLog.requestPath) }}</el-descriptions-item>
         <el-descriptions-item label="IP">{{ displayText(detailLog.clientIp) }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ formatDateTime(detailLog.createdAt) }}</el-descriptions-item>

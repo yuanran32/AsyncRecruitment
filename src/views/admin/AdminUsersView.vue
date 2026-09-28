@@ -90,7 +90,6 @@
             </div>
           </div>
         </template>
-        <el-table-column prop="id" label="用户 ID" width="90" />
         <el-table-column prop="username" label="用户名" min-width="130" />
         <el-table-column prop="email" label="邮箱" min-width="220" />
         <el-table-column label="角色" width="150">
@@ -206,7 +205,6 @@
       <div v-loading="detailLoading">
         <template v-if="detailUser">
           <el-descriptions :column="1" border>
-            <el-descriptions-item label="用户 ID">{{ detailUser.id }}</el-descriptions-item>
             <el-descriptions-item label="用户名">{{ detailUser.username }}</el-descriptions-item>
             <el-descriptions-item label="邮箱">{{ detailUser.email }}</el-descriptions-item>
             <el-descriptions-item label="角色">{{ getRoleLabel(detailUser.role) }}</el-descriptions-item>

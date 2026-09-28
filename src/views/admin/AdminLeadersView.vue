@@ -12,13 +12,10 @@
 
     <section class="page-section">
       <el-table v-loading="loading" :data="groups" empty-text="暂无分组">
-        <el-table-column prop="id" label="分组 ID" width="90" />
         <el-table-column prop="name" label="分组" min-width="180" />
         <el-table-column label="方向" min-width="170">
           <template #default="{ row }">{{ getGroupDirectionLabel(row) }}</template>
         </el-table-column>
-        <el-table-column prop="directionLevel1Id" label="一级方向 ID" width="120" />
-        <el-table-column prop="directionLevel2Id" label="二级方向 ID" width="120" />
         <el-table-column label="年级" width="90">
           <template #default="{ row }">{{ getGradeLabel(row.grade) }}</template>
         </el-table-column>
@@ -26,7 +23,6 @@
         <el-table-column label="容量" width="110">
           <template #default="{ row }">{{ row.currentSize ?? 0 }} / {{ row.maxSize }}</template>
         </el-table-column>
-        <el-table-column prop="leaderUserId" label="负责人 ID" width="110" />
         <el-table-column label="当前负责人" min-width="150">
           <template #default="{ row }">{{ getLeaderName(row.leaderUserId) }}</template>
         </el-table-column>

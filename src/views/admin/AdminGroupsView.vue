@@ -48,7 +48,6 @@
       </MobileList>
 
       <el-table v-else v-loading="loading" :data="groups" empty-text="暂无分组">
-        <el-table-column prop="id" label="分组 ID" width="90" />
         <el-table-column prop="name" label="分组名称" min-width="180" />
         <el-table-column label="方向" min-width="180">
           <template #default="{ row }">{{ getGroupDirectionLabel(row) }}</template>
@@ -63,7 +62,6 @@
         <el-table-column label="负责人" width="120">
           <template #default="{ row }">{{ getLeaderLabel(row) }}</template>
         </el-table-column>
-        <el-table-column prop="leaderUserId" label="负责人 ID" width="110" />
         <el-table-column label="创建时间" min-width="170">
           <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
         </el-table-column>
@@ -116,16 +114,12 @@
       <div v-loading="detailLoading">
         <template v-if="detailGroup">
           <el-descriptions :column="1" border>
-            <el-descriptions-item label="分组 ID">{{ detailGroup.id }}</el-descriptions-item>
             <el-descriptions-item label="分组名称">{{ detailGroup.name }}</el-descriptions-item>
             <el-descriptions-item label="方向">{{ getGroupDirectionLabel(detailGroup) }}</el-descriptions-item>
-            <el-descriptions-item label="一级方向 ID">{{ detailGroup.directionLevel1Id }}</el-descriptions-item>
-            <el-descriptions-item label="二级方向 ID">{{ detailGroup.directionLevel2Id }}</el-descriptions-item>
             <el-descriptions-item label="年级">{{ getGradeLabel(detailGroup.grade) }}</el-descriptions-item>
             <el-descriptions-item label="入学年份">{{ detailGroup.admissionYear }}</el-descriptions-item>
             <el-descriptions-item label="容量">{{ detailGroup.currentSize ?? members.length }} / {{ detailGroup.maxSize }}</el-descriptions-item>
             <el-descriptions-item label="负责人">{{ getLeaderLabel(detailGroup) }}</el-descriptions-item>
-            <el-descriptions-item label="负责人 ID">{{ displayText(detailGroup.leaderUserId) }}</el-descriptions-item>
             <el-descriptions-item label="创建时间">{{ formatDateTime(detailGroup.createdAt) }}</el-descriptions-item>
             <el-descriptions-item label="更新时间">{{ formatDateTime(detailGroup.updatedAt) }}</el-descriptions-item>
           </el-descriptions>
@@ -139,10 +133,8 @@
           <p v-if="!metaStore.isSelection" class="muted">当前不是选拔期，无法补录成员。</p>
           <p v-else-if="isGroupFull" class="muted">当前分组已满员，无法继续添加成员。</p>
           <el-table :data="members" empty-text="暂无成员">
-            <el-table-column prop="userId" label="用户 ID" width="90" />
             <el-table-column prop="realName" label="姓名" width="110" />
             <el-table-column prop="username" label="用户名" width="130" />
-            <el-table-column prop="applicationId" label="申请 ID" width="90" />
             <el-table-column label="方向" min-width="160">
               <template #default="{ row }">{{ row.directionLevel1Name }} / {{ row.directionLevel2Name }}</template>
             </el-table-column>

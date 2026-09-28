@@ -141,7 +141,6 @@
             </div>
           </div>
           <PageTable :data="groupSummaries" :loading="groupsLoading" empty-text="暂无分组数据">
-            <el-table-column prop="groupId" label="分组 ID" width="100" />
             <el-table-column prop="groupName" label="分组名称" min-width="160" />
             <el-table-column prop="memberCount" label="成员" width="90" />
             <el-table-column prop="taskCount" label="任务" width="90" />
@@ -211,7 +210,6 @@
       <div v-loading="detailLoading">
         <template v-if="groupDetail">
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="分组 ID">{{ groupDetail.groupId }}</el-descriptions-item>
             <el-descriptions-item label="分组名称">{{ groupDetail.groupName }}</el-descriptions-item>
             <el-descriptions-item label="成员数">{{ groupDetail.memberCount }}</el-descriptions-item>
             <el-descriptions-item label="任务数">{{ groupDetail.taskCount }}</el-descriptions-item>
@@ -222,9 +220,7 @@
           </el-descriptions>
           <h3 class="detail-title">任务明细</h3>
           <PageTable :data="groupDetail.tasks" empty-text="暂无任务">
-            <el-table-column prop="id" label="任务 ID" width="90" />
             <el-table-column prop="title" label="标题" min-width="160" />
-            <el-table-column prop="groupId" label="分组 ID" width="90" />
             <el-table-column prop="groupName" label="分组" min-width="140" />
             <el-table-column label="附件" min-width="180" show-overflow-tooltip>
               <template #default="{ row }">{{ formatAttachment(row.attachment) }}</template>

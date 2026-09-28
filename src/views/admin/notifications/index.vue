@@ -10,15 +10,12 @@
         <el-button :icon="Refresh" :loading="loading" @click="loadNotifications">刷新</el-button>
       </div>
       <PageTable :data="notifications" :loading="loading">
-        <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="title" label="标题" min-width="180" />
         <el-table-column prop="content" label="内容" min-width="240" show-overflow-tooltip />
         <el-table-column label="类型" min-width="120">
           <template #default="{ row }">{{ getTypeLabel(row.type) }}</template>
         </el-table-column>
         <el-table-column prop="relatedType" label="关联类型" min-width="120" />
-        <el-table-column prop="relatedId" label="关联 ID" width="100" />
-        <el-table-column prop="senderUserId" label="发送人 ID" width="110" />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.readAt ? 'info' : 'success'" effect="plain">
@@ -50,12 +47,9 @@
 
     <el-drawer v-model="detailVisible" title="通知详情" :size="isMobile ? '100%' : '560px'">
       <el-descriptions v-if="detailItem" :column="1" border>
-        <el-descriptions-item label="ID">{{ displayText(detailItem.id) }}</el-descriptions-item>
         <el-descriptions-item label="标题">{{ displayText(detailItem.title) }}</el-descriptions-item>
         <el-descriptions-item label="类型">{{ getTypeLabel(detailItem.type) }}</el-descriptions-item>
         <el-descriptions-item label="关联类型">{{ displayText(detailItem.relatedType) }}</el-descriptions-item>
-        <el-descriptions-item label="关联 ID">{{ displayText(detailItem.relatedId) }}</el-descriptions-item>
-        <el-descriptions-item label="发送人 ID">{{ displayText(detailItem.senderUserId) }}</el-descriptions-item>
         <el-descriptions-item label="状态">{{ detailItem.readAt ? '已读' : '未读' }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ formatDateTime(detailItem.createdAt) }}</el-descriptions-item>
         <el-descriptions-item label="更新时间">{{ formatDateTime(detailItem.updatedAt) }}</el-descriptions-item>

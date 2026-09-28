@@ -44,8 +44,6 @@
         @update:page="handlePageChange"
         @update:size="handleSizeChange"
       >
-        <el-table-column prop="id" label="申请 ID" width="90" />
-        <el-table-column prop="userId" label="用户 ID" width="90" />
         <el-table-column prop="realName" label="姓名" width="110" />
         <el-table-column prop="username" label="用户名" min-width="120" />
         <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />

@@ -63,10 +63,6 @@
         :tree-props="{ children: 'children' }"
         empty-text="暂无方向"
       >
-        <el-table-column prop="id" label="方向 ID" width="100" />
-        <el-table-column label="父级 ID" width="100">
-          <template #default="{ row }">{{ row.parentId ?? '—' }}</template>
-        </el-table-column>
         <el-table-column prop="name" label="方向名称" min-width="300" />
         <el-table-column label="层级" min-width="140">
           <template #default="{ row }">{{ row.level === 1 ? '一级' : '二级' }}</template>
