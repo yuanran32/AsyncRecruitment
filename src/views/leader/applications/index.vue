@@ -45,7 +45,7 @@
         <el-table-column label="更新时间" min-width="170">
           <template #default="{ row }">{{ formatDateTime(row.updatedAt) }}</template>
         </el-table-column>
-        <el-table-column label="操作" :width="isMobile ? 110 : 220" fixed="right">
+        <el-table-column label="操作" :width="isMobile ? 110 : 280" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button text type="primary" :icon="View" @click="openDetail(row)">详情</el-button>
