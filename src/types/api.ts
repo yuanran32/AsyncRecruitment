@@ -187,6 +187,8 @@ export interface Task {
   contentMarkdown?: string;
   scope?: Scope;
   groupName?: string;
+  directionLevel1Id?: number | null;
+  directionLevel2Id?: number | null;
   attachment?: TaskAttachment | null;
   attachmentFileId?: number | null;
   attachmentFileName?: string | null;

@@ -136,7 +136,7 @@ function handleSizeChange() {
 function getDirectionLabel(material: Material) {
   const level1 = material.directionLevel1Id ? directionNameMap.value.get(material.directionLevel1Id) : undefined;
   const level2 = material.directionLevel2Id ? directionNameMap.value.get(material.directionLevel2Id) : undefined;
-  return [level1, level2].filter(Boolean).join(' / ') || '全部方向';
+  return [level1, level2].filter(Boolean).join(' / ') || material.groupName || '全部方向';
 }
 
 function hasAttachment(material: Material) {

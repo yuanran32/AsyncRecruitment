@@ -49,7 +49,7 @@ const directionLabel = computed(() => {
   if (!material.value) return '全部方向';
   const level1 = material.value.directionLevel1Id ? directionNameMap.value.get(material.value.directionLevel1Id) : undefined;
   const level2 = material.value.directionLevel2Id ? directionNameMap.value.get(material.value.directionLevel2Id) : undefined;
-  return [level1, level2].filter(Boolean).join(' / ') || '全部方向';
+  return [level1, level2].filter(Boolean).join(' / ') || material.value.groupName || '全部方向';
 });
 const attachmentHref = computed(() => {
   if (!material.value) return null;
